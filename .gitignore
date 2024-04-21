@@ -1,0 +1,7 @@
+venv
+.env
+**/__pycache__
+.DS_Store
+.idea
+viranova-storage/videos/*
+viranova-storage/audio/*

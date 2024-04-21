@@ -1,0 +1,86 @@
+# Alembic Migration Management
+
+## Overview
+
+Alembic is a lightweight database migration tool for use with the SQLAlchemy Database Toolkit for Python. It allows you to create, manage, and apply database schema migrations.
+
+## Setup
+
+Ensure you have Alembic installed. If not, you can install it using pip:
+
+```bash
+pip install alembic
+```
+
+## Configuration
+
+Alembic should be configured with a `alembic.ini` file and an environment script (`env.py`) which defines the migration environment. Make sure these files are correctly set up to connect to your database. Adjust the `sqlalchemy.url` in `alembic.ini` to point to your database:
+
+```ini
+sqlalchemy.url = driver://username:password@localhost/dbname
+```
+
+## Creating Migrations
+
+To create an automatic migration script:
+
+```bash
+alembic revision --autogenerate -m "Description of the migration"
+```
+
+Review the generated script in the `versions` directory to ensure it accurately represents the desired schema changes.
+
+## Applying Migrations
+
+To upgrade your database to the latest revision, run:
+
+```bash
+alembic upgrade head
+```
+
+To upgrade to a specific version:
+
+```bash
+alembic upgrade <revision_id>
+```
+
+## Downgrading
+
+To revert to a previous version:
+
+```bash
+alembic downgrade -1
+```
+
+To downgrade to a specific version:
+
+```bash
+alembic downgrade <revision_id>
+```
+
+## Viewing History
+
+To see the revision history of your migrations:
+
+```bash
+alembic history
+```
+
+## Current Version
+
+To see the current version of the database:
+
+```bash
+alembic current
+```
+
+## Tips
+
+- Always review auto-generated migrations for accuracy.
+- Keep your migration scripts under version control.
+- Apply migrations in a development environment before running them in production.
+- Use `alembic --help` to see more commands and options.
+
+## Troubleshooting
+
+If you encounter issues, ensure your database URL is correct, and dependencies are correctly installed. Check the Alembic documentation for more detailed troubleshooting tips.
