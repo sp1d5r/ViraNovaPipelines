@@ -35,15 +35,21 @@ def extract_channel_videos(channel_limit: int = 3, max_total_results: int = 500)
     if not database.table_exists(channels_raw):
         raise Exception("Channels RAW Table Does Not Exist.")
 
+    if not database.table_exists(videos_raw):
+        raise Exception("Videos RAW Table Does Not Exist.")
+
     # Load Tables
     channels_downloaded_df = database.read_table(channels_downloaded)
     channels_raw_df = database.read_table(channels_raw)
+    videos_raw_df = database.read_table(videos_raw)
 
     # Update channels downloaded to include new all raw channels
     extended_channels_downloaded_df = channels_raw_df.merge(channels_downloaded_df[['channel_id', 'downloaded']], on='channel_id', how='left')
     extended_channels_downloaded_df['downloaded'] = extended_channels_downloaded_df['downloaded'].fillna(False)
     if "date_added" not in extended_channels_downloaded_df:
         extended_channels_downloaded_df['date_added'] = None
+
+    collected_video_ids = set(list(videos_raw_df['videoId']))
 
     # Prepare array for video information
     downloaded_videos = []
@@ -53,10 +59,9 @@ def extract_channel_videos(channel_limit: int = 3, max_total_results: int = 500)
 
     # Loop through channels to download videos from
     for index, row in extended_channels_downloaded_df.iterrows():
-        # If downloaded continue to next row
-        # if not row['downloaded']:
-        #     logger.info(f"Channel {row['channel_id']}: Already parsed")
-        #     continue
+        if not row['downloaded']:
+            logger.info(f"Channel {row['channel_id']}: Already parsed")
+            continue
 
         # If count exceeds the max results then break out of loop
         if count == channel_limit:
@@ -83,8 +88,11 @@ def extract_channel_videos(channel_limit: int = 3, max_total_results: int = 500)
         # Increment count
         count += 1
 
+    # Help here. let's filter out videos that already exist
+    unique_downloaded_videos = [video for video in downloaded_videos if video['videoId'] not in collected_video_ids]
+
     # Update Database
-    database.append_rows(pd.DataFrame(downloaded_videos), videos_raw)
+    database.append_rows(pd.DataFrame(unique_downloaded_videos), videos_raw)
     database.write_to_table(extended_channels_downloaded_df, channels_downloaded)
 
 
