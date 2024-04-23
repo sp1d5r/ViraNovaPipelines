@@ -71,10 +71,12 @@ def extract_channel_videos(channel_limit: int = 3, max_total_results: int = 500)
         try:
             # Fetch videos from channels not yet downloaded
             collected_youtube_videos = download_videos_from_channel(row['channel_id'], max_total_results)
-            downloaded_videos += collected_youtube_videos
 
             # Mark the channel as downloaded in channels_downloaded
             if len(collected_youtube_videos) >= 0:
+                unique_downloaded_videos = list({video['videoId']: video for video in collected_youtube_videos if
+                                                 video['videoId'] not in collected_video_ids}.values())
+                database.append_rows(pd.DataFrame(unique_downloaded_videos), videos_raw)
                 extended_channels_downloaded_df.at[index, 'downloaded'] = True
                 extended_channels_downloaded_df.at[index, 'date_added'] = datetime.now()
             else:
@@ -88,12 +90,7 @@ def extract_channel_videos(channel_limit: int = 3, max_total_results: int = 500)
         # Increment count
         count += 1
 
-    # Help here. let's filter out videos that already exist
-    unique_downloaded_videos = list({video['videoId']: video for video in downloaded_videos if
-                                     video['videoId'] not in collected_video_ids}.values())
-
     # Update Database
-    database.append_rows(pd.DataFrame(unique_downloaded_videos), videos_raw)
     database.write_to_table(extended_channels_downloaded_df, channels_downloaded)
 
 
