@@ -1,5 +1,5 @@
 from datetime import datetime
-
+from prefect import flow, task, get_run_logger
 import pandas as pd
 from database.production_database import ProductionDatabase
 from table_names import videos_downloaded, videos_transcribed, transcripts_raw
@@ -26,29 +26,30 @@ def clean_captions(video_id, caption, key):
     return cleaned_captions
 
 
-def download_transcript_from_video_id(video_id):
+@task
+def download_transcript_from_video_id(video_id, logger):
     yt = YouTube(f"https://www.youtube.com/watch?v={video_id}")
     try:
         streams = yt.streams
         yt.bypass_age_gate()
         captions = yt.captions
         if not captions:
-            print("No Captions Available for Video")
+            logger.info("No Captions Available for Video")
             return None
 
         if "en" in captions:
-            print("Extracting English Captions")
+            logger.info("Extracting English Captions")
             retrieved_captions = captions.get("en")
             retrieved_captions_json = retrieved_captions.json_captions
             return clean_captions(video_id, retrieved_captions_json, key="en")
 
-        print("Extracting Auto Generated Captions")
-        print(captions)
+        logger.info("Extracting Auto Generated Captions")
+        logger.info(captions)
         retrieved_captions = captions.get("a.en")
         retrieved_captions_json = retrieved_captions.json_captions
         return clean_captions(video_id, retrieved_captions_json, key="a.en")
     except:
-        print("Error in Downloading Transcript")
+        logger.info("Error in Downloading Transcript")
         return None
 
 
@@ -57,9 +58,10 @@ Download Video Transcript
 - Determines if the video is a short or an original
 """
 
-
+@flow
 def download_video_transcript(max_downloads: int = 50):
     database = ProductionDatabase()
+    logger = get_run_logger()
 
     if not database.table_exists(videos_downloaded):
         raise Exception("Videos Cleaned Table Does Not Exist.")
@@ -72,7 +74,6 @@ def download_video_transcript(max_downloads: int = 50):
 
     # Load Tables
     videos_downloaded_df = database.read_table(videos_downloaded)
-    transcripts_raw_df = database.read_table(transcripts_raw)
     videos_transcribed_df = database.read_table(videos_transcribed)
 
     # Get a list of all transcribed videos
@@ -95,7 +96,7 @@ def download_video_transcript(max_downloads: int = 50):
             continue
 
         print(f"Extracting transcript for {row['video_id']}")
-        transcription = download_transcript_from_video_id(row['video_id'])
+        transcription = download_transcript_from_video_id(row['video_id'], logger)
 
         if transcription is not None:
             new_transcriptions.append(transcription)
@@ -113,4 +114,7 @@ def download_video_transcript(max_downloads: int = 50):
 
 
 if __name__ == "__main__":
-    download_video_transcript()
+    download_video_transcript.serve(
+        name="Download Video Transcripts [Transcripts]",
+        tags=["Ingestion", "Videos", "Transcripts"],
+    )

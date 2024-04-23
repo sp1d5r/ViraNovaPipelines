@@ -229,3 +229,7 @@ def perform_topical_segmentation(number_of_videos_to_segment: int = 1):
         transcript_boundaries = get_transcript_topic_boundaries(transcripts_embeddings, update_progress, progress_message)
         topical_segments = create_segments(fixed_length_transcripts, transcript_boundaries, video_id,
                                               update_progress, progress_message)
+
+        print(topical_segments)
+        break
+

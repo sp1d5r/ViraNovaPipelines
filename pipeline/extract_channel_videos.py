@@ -89,7 +89,8 @@ def extract_channel_videos(channel_limit: int = 3, max_total_results: int = 500)
         count += 1
 
     # Help here. let's filter out videos that already exist
-    unique_downloaded_videos = [video for video in downloaded_videos if video['videoId'] not in collected_video_ids]
+    unique_downloaded_videos = list({video['videoId']: video for video in downloaded_videos if
+                                     video['videoId'] not in collected_video_ids}.values())
 
     # Update Database
     database.append_rows(pd.DataFrame(unique_downloaded_videos), videos_raw)
