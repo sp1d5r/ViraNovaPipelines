@@ -7,6 +7,9 @@ videos_raw = "videos_raw"
 videos_cleaned = "videos_cleaned"
 videos_downloaded = "videos_downloaded"
 videos_type = "videos_type"
+videos_transcribed = "videos_transcribed"
+original_videos_segmented = "original_videos_segmented"
 
 # Transcript
 transcripts_raw = "transcripts_raw"
+transcripts_segmented = "transcripts_segmented"

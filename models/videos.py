@@ -1,6 +1,13 @@
 from database.production_db.database import Base
 from sqlalchemy import Column, Integer, String, TIMESTAMP, Boolean, Float
-from table_names import videos_raw, videos_cleaned, videos_downloaded, videos_type
+from table_names import (
+    videos_raw,
+    videos_cleaned,
+    videos_downloaded,
+    videos_type,
+    videos_transcribed,
+    original_videos_segmented
+)
 
 
 class VideosRaw(Base):
@@ -62,3 +69,16 @@ class VideosType(Base):
     aspect_ratio = Column(Float)
     num_frames = Column(Integer)
     is_short = Column(Boolean)
+
+
+class VideosTranscribed(Base):
+    __tablename__ = videos_transcribed
+
+    video_id = Column(String, primary_key=True)
+    transcribed_at = Column(TIMESTAMP)
+
+class OriginalVideosFixedLengthTranscribed:
+    __tablename__ = original_videos_segmented
+
+    video_id = Column(String, primary_key=True)
+    fixed_length_transcribed_at = Column(TIMESTAMP)

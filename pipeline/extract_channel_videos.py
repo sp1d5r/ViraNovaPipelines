@@ -59,6 +59,7 @@ def extract_channel_videos(channel_limit: int = 3, max_total_results: int = 500)
 
     # Loop through channels to download videos from
     for index, row in extended_channels_downloaded_df.iterrows():
+        print(row['downloaded'])
         if row['downloaded']:
             logger.info(f"Channel {row['channel_id']}: Already parsed")
             continue
@@ -71,7 +72,6 @@ def extract_channel_videos(channel_limit: int = 3, max_total_results: int = 500)
             # Fetch videos from channels not yet downloaded
             collected_youtube_videos = download_videos_from_channel(row['channel_id'], max_total_results)
             downloaded_videos += collected_youtube_videos
-
 
             # Mark the channel as downloaded in channels_downloaded
             if len(collected_youtube_videos) >= 0:

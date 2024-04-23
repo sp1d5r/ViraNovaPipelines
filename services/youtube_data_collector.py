@@ -32,12 +32,16 @@ class YoutubeDataCollector:
 
                 # Loop through the items and add unique video IDs to the set
                 for item in response.json()['items']:
-                    video_info = self._extract_relevant_info(item)
-                    video_id = video_info.get('videoId')
+                    try:
+                        video_info = self._extract_relevant_info(item)
+                        video_id = video_info.get('videoId')
 
-                    if video_id not in video_ids:
-                        video_ids.add(video_id)
-                        video_items.append(video_info)
+                        if video_id not in video_ids:
+                            video_ids.add(video_id)
+                            video_items.append(video_info)
+                    except Exception as e:
+                        print(f"Error occured in Youtube video collector: {e}")
+                        print("Attempting to continue")
 
                 next_page_token = response.json().get('nextPageToken')
                 print(f"Next Page Token: {next_page_token}. Sleeping for: {sleep_in_s}")

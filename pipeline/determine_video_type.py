@@ -14,7 +14,7 @@ def analyse_video(video_id, video_path):
     # Open the video file
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
-        return {"error": "Video cannot be opened"}
+        return None
 
     # Get the number of frames
     num_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -30,7 +30,7 @@ def analyse_video(video_id, video_path):
 
     # Return the results
     return {
-        "videoId": video_id,
+        "video_id": video_id,
         "aspect_ratio": aspect_ratio,
         "num_frames": num_frames,
         "is_short": aspect_ratio < 0.7
@@ -55,22 +55,23 @@ def determine_video_type():
     videos_type_df = database.read_table(videos_type)
 
     # Initialise Empty video array
-    videos_determined = set(list(videos_type_df['videoId']))
+    videos_determined = set(list(videos_type_df['video_id']))
     new_videos_type = []
 
-    for index, row in videos_downloaded_df:
-
+    for index, row in videos_downloaded_df.iterrows():
         # Check if the video type has already been calculated
-        if row['videoId'] in videos_determined:
+        if row['video_id'] in videos_determined:
             continue
 
-        analysed_video = analyse_video(row['videoId'], row['video_downloaded_path'])
+        print(f"Analysing video: {row['video_id']}")
 
-        new_videos_type.append(analysed_video)
+        analysed_video = analyse_video(row['video_id'], row['video_downloaded_path'])
+
+        if analysed_video:
+            new_videos_type.append(analysed_video)
 
     # Update Database
     database.append_rows(pd.DataFrame(new_videos_type), videos_type)
-
 
 if __name__ == "__main__":
     determine_video_type()

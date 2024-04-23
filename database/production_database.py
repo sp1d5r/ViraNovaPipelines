@@ -94,3 +94,29 @@ class ProductionDatabase(DatabaseInterface):
             raise DatabaseConnectionError(
                 f"Error occurred while upserting data to table {table_name}: {e}"
             )
+
+    def query_table_by_column(self, table_name: str, column_name: str, column_value: any) -> pd.DataFrame:
+        """
+        Query rows from the specified table where the specified column matches the given value.
+
+        Args:
+        - table_name (str): The name of the table to query.
+        - column_name (str): The name of the column to filter on.
+        - column_value (any): The value to match in the specified column.
+
+        Returns:
+        - pd.DataFrame: A DataFrame containing the rows from the database where the column values match.
+
+        Raises:
+        - DatabaseConnectionError: If any error occurs during the database operation.
+        """
+        try:
+            query = text(f"SELECT * FROM {table_name} WHERE {column_name} = :column_value")
+            result = self.engine.execute(query, {'column_value': column_value})
+            transcripts = pd.DataFrame(result.fetchall(), columns=result.keys())
+            return transcripts
+        except SQLAlchemyError as e:
+            raise DatabaseConnectionError(
+                f"Error occurred while querying {table_name} for {column_name} = {column_value}: {e}"
+            )
+

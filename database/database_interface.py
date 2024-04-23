@@ -54,6 +54,21 @@ class DatabaseInterface(ABC):
         """
         pass
 
+    @abstractmethod
+    def query_table_by_column(self, table_name: str, column_name: str, column_value: any) -> pd.DataFrame:
+        """
+        Query rows from the specified table where the specified column matches the given value.
+
+        :param table_name: (str) The name of the table to query.
+        :param column_name: (str) The name of the column to filter on.
+        :param column_value: (any) The value to match in the specified column.
+        :return pd.DataFrame: A DataFrame containing the rows from the database where the column values match.
+
+        Raises:
+        - DatabaseConnectionError: If any error occurs during the database operation.
+        """
+        pass
+
 
 class DatabaseConnectionError(Exception):
     def __init__(self, message: str):
