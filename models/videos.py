@@ -6,7 +6,7 @@ from table_names import (
     videos_downloaded,
     videos_type,
     videos_transcribed,
-    original_videos_segmented
+    videos_segmented
 )
 
 
@@ -77,8 +77,15 @@ class VideosTranscribed(Base):
     video_id = Column(String, primary_key=True)
     transcribed_at = Column(TIMESTAMP)
 
-class OriginalVideosFixedLengthTranscribed:
-    __tablename__ = original_videos_segmented
 
-    video_id = Column(String, primary_key=True)
-    fixed_length_transcribed_at = Column(TIMESTAMP)
+class VideosSegmented:
+    __tablename__ = videos_segmented
+
+    segment_id = Column(String, primary_key=True)
+    earliest_start_time = Column(Integer)
+    latest_end_time = Column(Float)
+    start_index = Column(Integer)
+    end_index = Column(Integer)
+    video_id = Column(String)
+    index = Column(Integer)
+    words = Column(String)

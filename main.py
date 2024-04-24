@@ -1,5 +1,6 @@
 from prefect import serve
 
+from pipeline import determine_video_type
 # Channel Parsing
 from pipeline.track_channels import track_channel
 from pipeline.clean_videos import clean_raw_videos
@@ -53,12 +54,19 @@ if __name__ == "__main__":
         tags=["Ingestion", "Videos", "Transcripts"],
     )
 
+    # Extract video type
+    determine_video_type_deployment = determine_video_type.to_deployment(
+        name="Determine Video Type [Videos]",
+        tags=["Analysis", "Videos"],
+    )
+
     serve(
         track_channel_deployment,
         extract_channel_videos_deployment,
         add_new_raw_video_deployment,
         clean_raw_videos_deployment,
         download_videos_deployment,
-        download_transcript_deployment
+        download_transcript_deployment,
+        determine_video_type_deployment,
 
     )

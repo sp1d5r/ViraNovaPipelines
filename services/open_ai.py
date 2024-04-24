@@ -16,6 +16,27 @@ class OpenAIService():
             api_key=self.key,
         )
 
+    def get_single_embedding(self, text):
+        """
+        Retrieve an embedding for a single piece of text using OpenAI's embeddings API.
+        Args:
+            text (str): The text to get an embedding for.
+        Returns:
+            list: The embedding vector for the given text.
+        """
+        try:
+            response = self.client.embeddings.create(
+                input=text,
+                model="text-embedding-3-small"
+            )
+            embedding_response = response.json()
+            embedding_json = json.loads(embedding_response)
+            embedding_data = embedding_json['data'][0]['embedding']
+            return embedding_data
+        except Exception as e:
+            print(f"An error occurred while fetching the embedding: {str(e)}")
+            return None
+
     def get_embeddings(self, transcripts, update_progress, step_size=3, step=3):
         total_transcripts = len(transcripts)
         embeddings_recorded = []
@@ -48,6 +69,39 @@ class OpenAIService():
         # Truncate the embeddings list to match the DataFrame length if it's longer
         embeddings_recorded = embeddings_recorded[:total_transcripts]
         return embeddings_recorded
+
+    def get_embeddings_parallel(self, transcripts, batch_size, update_progress):
+        total_transcripts = len(transcripts)
+        embeddings_recorded = []
+
+        # Loop over transcripts in batches of batch_size
+        for start in range(0, total_transcripts, batch_size):
+            try:
+                update_progress(start / total_transcripts * 100)
+                end = min(start + batch_size, total_transcripts)
+
+                # Prepare batch of transcripts for embedding
+                transcript_batch = [transcripts[i]['transcript'] for i in range(start, end)]
+
+                # Make a single request for the entire batch
+                response = self.client.embeddings.create(
+                    input=transcript_batch,
+                    model="text-embedding-3-small"
+                )
+                embeddings_response = response.json()
+                embedding_json = json.loads(embeddings_response)
+                # Process each embedding in the response
+                for embedding_info in embedding_json['data']:
+                    embeddings_recorded.append(embedding_info['embedding'])
+
+                time.sleep(15)
+
+            except Exception as e:
+                print(f"An unexpected error occurred: {str(e)}")
+                # Handle other exceptions appropriately
+
+        # Ensure the number of embeddings matches the number of transcripts
+        return embeddings_recorded[:total_transcripts]
 
     def extract_moderation_metrics(self, segment_text):
         # Assuming 'response' is a dictionary like the provided JSON

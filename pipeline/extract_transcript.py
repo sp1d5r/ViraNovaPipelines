@@ -2,7 +2,7 @@ from datetime import datetime
 from prefect import flow, task, get_run_logger
 import pandas as pd
 from database.production_database import ProductionDatabase
-from table_names import videos_downloaded, videos_transcribed, transcripts_raw
+from table_names import videos_cleaned, videos_transcribed, transcripts_raw
 from pytube import YouTube
 
 
@@ -64,7 +64,7 @@ def download_video_transcript(max_downloads: int = 50):
     database = ProductionDatabase()
     logger = get_run_logger()
 
-    if not database.table_exists(videos_downloaded):
+    if not database.table_exists(videos_cleaned):
         raise Exception("Videos Cleaned Table Does Not Exist.")
 
     if not database.table_exists(transcripts_raw):
@@ -74,7 +74,7 @@ def download_video_transcript(max_downloads: int = 50):
         raise Exception("Videos Transcribed Table Does Not Exist.")
 
     # Load Tables
-    videos_downloaded_df = database.read_table(videos_downloaded)
+    videos_cleaned_df = database.read_table(videos_cleaned)
     videos_transcribed_df = database.read_table(videos_transcribed)
 
     # Get a list of all transcribed videos
@@ -86,7 +86,7 @@ def download_video_transcript(max_downloads: int = 50):
 
     count = 0
 
-    for index, row in videos_downloaded_df.iterrows():
+    for index, row in videos_cleaned_df.iterrows():
         # Check if we've collected enough transcripts for now
         if count >= max_downloads:
             print(f"Finished collecting {max_downloads} transcripts.")

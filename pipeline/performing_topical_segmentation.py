@@ -1,21 +1,30 @@
 import numpy as np
 import ast
+import json
 from services.open_ai import OpenAIService
 from database.production_database import ProductionDatabase
-from table_names import transcripts_raw, videos_transcribed, original_videos_segmented, videos_type
+from table_names import transcripts_raw, videos_transcribed, videos_segmented, videos_type
+
+# Variables to stay within context limit open AI one request
+TOTAL_AVAILABLE_TOKENS = 8000  # Lower Bound
+TOKEN_SIZE = 3
+AVERAGE_ENGLISH_WORD_LENGTH = 8
+FIXED_SEGMENT_LENGTH = 30
+AVERAGE_CHAR_SEGMENT = FIXED_SEGMENT_LENGTH * AVERAGE_ENGLISH_WORD_LENGTH
+SEGMENTS_TO_SEND_IN_PARALLEL = int((TOTAL_AVAILABLE_TOKENS * TOKEN_SIZE) / AVERAGE_CHAR_SEGMENT)
 
 
 def create_fixed_length_transcripts(transcripts, n=100):
     fixed_length_transcripts = []
 
-    # Iterate through each transcript entry
+    # Ensure transcripts are sorted by a key
     transcripts = transcripts.sort_values(by='key')
-    for index, transcript in transcripts.iterrows():
-        tStartMs = transcript['t_start_ms']
+    for _, transcript in transcripts.iterrows():
+        tStartMs = transcript['time_start_ms']
         window_words = []
         segment_index = 0
 
-        # Iterate through each word segment
+        # Try to evaluate the segments from string format
         try:
             segs = ast.literal_eval(transcript['segs'])
         except ValueError as e:
@@ -24,8 +33,10 @@ def create_fixed_length_transcripts(transcripts, n=100):
 
         for seg in segs:
             word = seg['utf8'].strip()
+            if word == '':
+                continue
             offset_ms = seg.get('tOffsetMs', 0)  # Default to 0 if tOffsetMs is not available
-            start_time = tStartMs + offset_ms  # Calculate the actual start time of the word
+            start_time = tStartMs + offset_ms
 
             # Create a dictionary for each word with word and start time
             word_info = {
@@ -38,19 +49,22 @@ def create_fixed_length_transcripts(transcripts, n=100):
 
             # Check if the window is full or if it's the last word in the segment
             if len(window_words) == n or segment_index == len(segs):
-                # Extract start time from the first word in the window
                 first_word_time = window_words[0]['start_time']
                 # Estimate end time from the last word in the window by adding average word duration
-                end_time = window_words[-1]['start_time'] + (tStartMs / len(segs))  # Simplistic average duration
+                end_time = window_words[-1]['start_time'] + (tStartMs / len(segs))
 
                 # Compile the window words into a transcript text
                 transcript_text = " ".join([w['word'] for w in window_words])
+
+                # JSON-format the word details
+                words_json = json.dumps(window_words)
 
                 # Append the fixed-length transcript segment to the list
                 fixed_length_transcripts.append({
                     'start_time': first_word_time,
                     'end_time': end_time,
-                    'transcript': transcript_text
+                    'transcript': transcript_text,
+                    'words': words_json  # Store word-level information as JSON string
                 })
 
                 # Reset the window for the next segment
@@ -133,6 +147,7 @@ def get_transcript_topic_boundaries(embeddings, update_progress, update_progress
 def create_segments(fixed_length_transcripts, boundaries, video_id, update_progress, update_progress_message):
     segments = []
     current_segment_transcripts = []
+    current_segment_words = []
     start_index = 0
     earliest_start_time = None
     latest_end_time = None
@@ -145,31 +160,41 @@ def create_segments(fixed_length_transcripts, boundaries, video_id, update_progr
 
         if boundary == 1 or i == 0:
             if current_segment_transcripts:
+                # Compile words from all transcripts in the current segment
+                compiled_words_json = json.dumps(current_segment_words)
+
                 # Save the previous segment
                 segment = {
                     'earliest_start_time': earliest_start_time,
                     'latest_end_time': latest_end_time,
                     'start_index': start_index,
                     'end_index': i - 1,
-                    'video_id': video_id,  # This might need to be set differently
+                    'video_id': video_id,
                     'index': len(segments),
-                    'transcript': " ".join(current_segment_transcripts)
+                    'transcript': " ".join(current_segment_transcripts),
+                    'words': compiled_words_json,
+                    'segment_id': video_id + str(len(segments))
                 }
                 segments.append(segment)
                 current_segment_transcripts = []
+                current_segment_words = []
 
             # Reset for new segment
             start_index = i
             earliest_start_time = transcript['start_time']
             latest_end_time = transcript['end_time']
             current_segment_transcripts.append(transcript['transcript'])
+            # Append word-level details for the new segment
+            current_segment_words.extend(json.loads(transcript['words']))
         else:
             # Continue with the current segment
             latest_end_time = max(latest_end_time, transcript['end_time'])
             current_segment_transcripts.append(transcript['transcript'])
+            current_segment_words.extend(json.loads(transcript['words']))
 
     # Add the last segment if there are remaining transcripts
     if current_segment_transcripts:
+        compiled_words_json = json.dumps(current_segment_words)
         segment = {
             'earliest_start_time': earliest_start_time,
             'latest_end_time': latest_end_time,
@@ -177,7 +202,9 @@ def create_segments(fixed_length_transcripts, boundaries, video_id, update_progr
             'end_index': len(fixed_length_transcripts) - 1,
             'video_id': video_id,
             'index': len(segments),
-            'transcript': " ".join(current_segment_transcripts)
+            'transcript': " ".join(current_segment_transcripts),
+            'words': compiled_words_json,
+            'segment_id': video_id + str(len(segments))
         }
         segments.append(segment)
 
@@ -196,24 +223,22 @@ def perform_topical_segmentation(number_of_videos_to_segment: int = 1):
     if not database.table_exists(videos_transcribed):
         raise Exception("Videos Transcribed Table Does Not Exist.")
 
-    if not database.table_exists(original_videos_segmented):
-        raise Exception("Videos Segmented Tracker Table Does Not Exist.")
-
-    if not database.table_exists(videos_type):
-        raise Exception("Videos Type Table Does Not Exist.")
+    # if not database.table_exists(videos_segmented):
+    #     raise Exception("Videos Segmented Tracker Table Does Not Exist.")
 
     # Load in tables to memory
     videos_transcribed_df = database.read_table(videos_transcribed)
-    videos_segmented_df = database.read_table(original_videos_segmented)
+    # videos_segmented_df = database.read_table(videos_segmented)
     videos_type_df = database.read_table(videos_type)
 
     # Videos downloaded
-    all_videos_segmented = set(videos_segmented_df['video_id'])
+    all_videos_segmented = set() #set(videos_segmented_df['video_id'])
     original_videos = set(videos_type_df['video_id'])
 
     # Eligible original videos to segment
     eligible_videos_df = videos_transcribed_df[~videos_transcribed_df['video_id'].isin(all_videos_segmented)]
     eligible_videos_df = eligible_videos_df[eligible_videos_df['video_id'].isin(original_videos)]
+    eligible_videos_df = eligible_videos_df[eligible_videos_df['duration'] > 600]  # Ensure it's an original
 
     number_to_segment = min(number_of_videos_to_segment, len(eligible_videos_df))
     selected_videos_df = eligible_videos_df.head(number_to_segment)
@@ -223,13 +248,19 @@ def perform_topical_segmentation(number_of_videos_to_segment: int = 1):
         print(f"Performing topical segmentation for video {video_id}")
 
         transcripts_extracted = database.query_table_by_column(transcripts_raw, 'video_id', video_id)
-        fixed_length_transcripts = create_fixed_length_transcripts(transcripts_extracted, n=10)
+        fixed_length_transcripts = create_fixed_length_transcripts(transcripts_extracted, n=FIXED_SEGMENT_LENGTH)
 
-        transcripts_embeddings = open_ai_service.get_embeddings(fixed_length_transcripts, update_progress)
+        transcripts_embeddings = open_ai_service.get_embeddings_parallel(
+            transcripts=fixed_length_transcripts,
+            batch_size=SEGMENTS_TO_SEND_IN_PARALLEL,
+            update_progress=update_progress)
         transcript_boundaries = get_transcript_topic_boundaries(transcripts_embeddings, update_progress, progress_message)
         topical_segments = create_segments(fixed_length_transcripts, transcript_boundaries, video_id,
-                                              update_progress, progress_message)
+                                            update_progress, progress_message)
 
         print(topical_segments)
         break
 
+
+if __name__=="__main__":
+    perform_topical_segmentation()
