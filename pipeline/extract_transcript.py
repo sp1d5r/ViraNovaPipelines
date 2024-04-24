@@ -9,9 +9,10 @@ from pytube import YouTube
 def clean_captions(video_id, caption, key):
     print("captions")
     events = caption['events']
+    sorted_events = sorted(events, key=lambda x: x['tStartMs'])
     cleaned_events = [
         {
-            'transcript_id': video_id + "_" + index,
+            'transcript_id': video_id + "_" + str(index),
             'time_start_ms': item['tStartMs'],
             'd_duration_ms': item['dDurationMs'],
             'segs': str(item['segs']),
@@ -19,7 +20,7 @@ def clean_captions(video_id, caption, key):
             'video_id': video_id,
             'language': key
         }
-        for index, item in enumerate(events) if 'segs' in item and 'dDurationMs' in item and 'tStartMs' in item
+        for index, item in enumerate(sorted_events) if 'segs' in item and 'dDurationMs' in item and 'tStartMs' in item
     ]
     # convert this to pandas
     cleaned_captions = pd.DataFrame(cleaned_events)
@@ -48,8 +49,8 @@ def download_transcript_from_video_id(video_id, logger):
         retrieved_captions = captions.get("a.en")
         retrieved_captions_json = retrieved_captions.json_captions
         return clean_captions(video_id, retrieved_captions_json, key="a.en")
-    except:
-        logger.info("Error in Downloading Transcript")
+    except Exception as e:
+        logger.info(f"Error in Downloading Transcript: {e}")
         return None
 
 

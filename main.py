@@ -41,7 +41,7 @@ if __name__ == "__main__":
     )
 
     # Download the transcripts for youtube videos
-    download_transcript_deployment = download_video_transcript.deployment(
+    download_transcript_deployment = download_video_transcript.to_deployment(
         name="Download Video Transcripts [Transcripts]",
         tags=["Ingestion", "Videos", "Transcripts"],
     )
