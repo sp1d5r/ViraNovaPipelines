@@ -83,8 +83,8 @@ def download_videos(max_downloads=20, sleep_time=10):
 
         downloaded_video = {
             'video_id': video_id,
-            'video_downloaded': not bool(video_path),
-            'audio_downloaded': not bool(audio_path),
+            'video_downloaded': bool(video_path),
+            'audio_downloaded': bool(audio_path),
             'video_downloaded_path': video_path,
             'audio_downloaded_path': audio_path,
         }
