@@ -101,7 +101,7 @@ def download_video_transcript(max_downloads: int = 50):
 
         if transcription is not None:
             new_transcriptions.append(transcription)
-            transcription_log.append({'video_id': row['video_id'], 'transcription_date': datetime.now()})
+            transcription_log.append({'video_id': row['video_id'], 'transcribed_at': datetime.now()})
             count += 1
 
     # Update Database
