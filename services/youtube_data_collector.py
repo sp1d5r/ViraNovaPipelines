@@ -1,11 +1,66 @@
 import time
 import requests
-
+import re
 
 class YoutubeDataCollector:
     def __init__(self, API_KEY):
         self.API_KEY = API_KEY
         self.BASE_URL = 'https://www.googleapis.com/youtube/v3/'
+
+    def fetch_video_info_from_video_id(self, video_id):
+        try:
+            video_url = f"{self.BASE_URL}videos"
+            params = {
+                'key': self.API_KEY,
+                'id': video_id,
+                'part': 'snippet,contentDetails,statistics'
+            }
+            response = requests.get(video_url, params=params)
+
+            if response.status_code != 200:
+                print(f"Failed to fetch data: {response.json()}")
+                return None
+
+            video_data = response.json()['items'][0]  # Assuming the API returns at least one video
+
+            # Extract relevant details from the response
+            snippet = video_data['snippet']
+            statistics = video_data['statistics']
+            content_details = video_data['contentDetails']
+
+            # Construct video item dictionary
+            video_item = {
+                'videoId': video_id,
+                'channel_id': snippet['channelId'],
+                'title': snippet['title'],
+                'description': snippet['description'],
+                'channelTitle': snippet['channelTitle'],
+                'publishTime': snippet['publishedAt'],
+                'viewCount': statistics.get('viewCount', '0'),
+                'likeCount': statistics.get('likeCount', '0'),
+                'favoriteCount': statistics.get('favoriteCount', '0'),
+                'commentCount': statistics.get('commentCount', '0'),
+                'duration': content_details.get('duration', '0'),
+                'projection': content_details.get('projection', 'rectangular'),
+                'width': None,
+                'height': None,
+                'aspect_ratio': None
+            }
+
+            # Calculate aspect ratio if thumbnail details are available
+            if 'thumbnails' in snippet and 'default' in snippet['thumbnails']:
+                width = snippet['thumbnails']['default'].get('width')
+                height = snippet['thumbnails']['default'].get('height')
+                video_item['width'] = width
+                video_item['height'] = height
+                if width and height:
+                    video_item['aspect_ratio'] = width / height
+
+            return video_item
+
+        except Exception as e:
+            print(f"Error occurred while fetching video info for video ID {video_id}: {e}")
+            return None
 
     def fetch_all_videos_from_channel(self, channel_id, max_total_results=200, sleep_in_s=20):
         video_ids = set()  # Use a set to store unique video IDs
@@ -103,7 +158,7 @@ class YoutubeDataCollector:
         title = snippet['title']
         description = snippet['description']
         channel_title = snippet['channelTitle']
-        publish_time = snippet['publishTime']
+        publish_time = snippet['publishedAt']
 
         # Extract width and height if available
         width = None
@@ -170,3 +225,12 @@ class YoutubeDataCollector:
                 item['projection'] = details['contentDetails'].get('projection', 'rectangular')
 
         return video_items
+
+    def get_video_id_from_url(self, videos_url):
+        youtube_url_pattern = re.compile(
+            r'^.*(?:(?:youtu\.be\/|v\/|vi\/|u\/\w\/|embed\/|shorts\/)|(?:(?:watch)?\?v(?:i)?=|\&v(?:i)?=))([^#\&\?]*).*')
+        match = youtube_url_pattern.match(videos_url)
+        if match:
+            return match.group(1)
+        else:
+            raise Exception("No Video ID Found")

@@ -6,6 +6,7 @@ from pipeline.clean_videos import clean_raw_videos
 from pipeline.download_videos import download_videos
 from pipeline.extract_channel_videos import extract_channel_videos
 from pipeline.extract_transcript import download_video_transcript
+from pipeline.add_new_raw_video import add_new_raw_video
 
 """
     PREFECT ENTRY POINT
@@ -16,27 +17,33 @@ from pipeline.extract_transcript import download_video_transcript
 
 # Execute the main flow
 if __name__ == "__main__":
-    # Tracking a youtube channel to extract all the videos from it.
+    # Tracking a YouTube channel to extract all the videos from it.
     track_channel_deployment = track_channel.to_deployment(
-        name="Add a Channel to Track (Channels)",
+        name="Add a Channel to Track [Channels]",
         tags=["Ingestion", "Channels"],
     )
 
-    # Extracting all the videos from a youtube channel (Youtube API)
+    # Extracting all the videos from a YouTube channel (YouTube API)
     extract_channel_videos_deployment = extract_channel_videos.to_deployment(
-        name="Download Videos for Channel (Channels)",
+        name="Extract Videos for Channel [Channels]",
         tags=["Ingestion", "Channels", "Videos"],
+    )
+
+    # Extract a single video ID's video information
+    add_new_raw_video_deployment = add_new_raw_video.to_deployment(
+        name="Extract Single Video Information  [Videos]",
+        tags=["Ingestion", "Videos", "Transcripts"],
     )
 
     # Cleaning the raw videos
     clean_raw_videos_deployment = clean_raw_videos.to_deployment(
-        name="Clean Videos (Videos)",
+        name="Clean Videos [Videos]",
         tags=["Data Cleaning", "Videos"],
     )
 
     # Download videos to download location
     download_videos_deployment = download_videos.to_deployment(
-        name="Download Videos (Downloading)",
+        name="Download Videos [Downloading]",
         tags=["Data Ingestion", "Videos"],
     )
 
@@ -49,6 +56,7 @@ if __name__ == "__main__":
     serve(
         track_channel_deployment,
         extract_channel_videos_deployment,
+        add_new_raw_video_deployment,
         clean_raw_videos_deployment,
         download_videos_deployment,
         download_transcript_deployment
