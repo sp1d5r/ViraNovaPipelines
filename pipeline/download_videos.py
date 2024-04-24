@@ -23,16 +23,16 @@ def download_video_from_id(video_id, logger):
     # Video Download
     try:
         video = yt.streams.filter(file_extension="mp4", resolution="480p")[0]
+        video.download(filename=VIDEO_DOWNLOAD_LOCATION + "video_"+ video_id + ".mp4")
         video_pathname = VIDEO_DOWNLOAD_LOCATION + "video_"+ video_id + ".mp4"
-        video.download(filename=video_pathname)
     except Exception as e:
         logger.error(f"Failed to download video: {video_id}, {e}")
 
     # Audio Download
     try:
         audio = yt.streams.filter(file_extension="mp4", only_audio=True)[0]
+        audio.download(filename=AUDIO_DOWNLOAD_LOCATION + "audio_" + video_id + ".mp4")
         audio_pathname = AUDIO_DOWNLOAD_LOCATION + "audio_" + video_id + ".mp4"
-        audio.download(filename=audio_pathname)
     except Exception as e:
         logger.error(f"Failed to download audio: {video_id}, {e}")
 
@@ -83,8 +83,8 @@ def download_videos(max_downloads=20, sleep_time=10):
 
         downloaded_video = {
             'video_id': video_id,
-            'video_downloaded': bool(video_path),
-            'audio_downloaded': bool(audio_path),
+            'video_downloaded': video_path is not None,
+            'audio_downloaded': video_path is not None,
             'video_downloaded_path': video_path,
             'audio_downloaded_path': audio_path,
         }
