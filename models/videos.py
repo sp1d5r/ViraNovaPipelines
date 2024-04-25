@@ -6,7 +6,8 @@ from table_names import (
     videos_downloaded,
     videos_type,
     videos_transcribed,
-    videos_segmented
+    videos_segmented,
+    videos_embedded
 )
 
 
@@ -83,3 +84,9 @@ class VideosSegmented(Base):
 
     video_id = Column(String, primary_key=True)
     segmented_at = Column(TIMESTAMP)
+
+class VideosEmbedded(Base):
+    __tablename__ = videos_embedded
+
+    video_id = Column(String, primary_key=True)
+    embedded_at = Column(TIMESTAMP)
