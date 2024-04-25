@@ -9,6 +9,8 @@ from pipeline.extract_channel_videos import extract_channel_videos
 from pipeline.extract_transcript import download_video_transcript
 from pipeline.add_new_raw_video import add_new_raw_video
 from pipeline.performing_topical_segmentation import perform_topical_segmentation
+from pipeline.get_transcript_embeddings import get_transcript_embeddings
+from pipeline.get_segment_embeddings import get_segment_embeddings
 
 """
     PREFECT ENTRY POINT
@@ -67,6 +69,18 @@ if __name__ == "__main__":
         tags=["Analysis", "Transcripts"],
     )
 
+    # Embedding Transcripts
+    get_transcript_embeddings_deployment = get_transcript_embeddings.to_deployment(
+        name="Embed Transcripts [Embeddings]",
+        tags=["Analysis", "Embeddings"],
+    )
+
+    # Embedding Segments
+    get_segment_embeddings_deployment = get_segment_embeddings.to_deployment(
+        name="Embed Segments [Embeddings]",
+        tags=["Analysis", "Embeddings"],
+    )
+
     serve(
         track_channel_deployment,
         extract_channel_videos_deployment,
@@ -75,5 +89,7 @@ if __name__ == "__main__":
         download_videos_deployment,
         download_transcript_deployment,
         determine_video_type_deployment,
-        perform_topical_segmentation_deployment
+        perform_topical_segmentation_deployment,
+        get_transcript_embeddings_deployment,
+        get_segment_embeddings_deployment
     )
