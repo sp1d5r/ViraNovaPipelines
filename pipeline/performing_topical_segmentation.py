@@ -271,8 +271,8 @@ def perform_topical_segmentation(number_of_videos_to_segment: int = 1):
         topical_segments = create_segments(fixed_length_transcripts, transcript_boundaries, video_id,
                                             update_progress, progress_message)
 
-        database.append_rows(pd.DataFrame(topical_segments), transcripts_segmented)
         database.append_rows(pd.DataFrame([{'video_id': video_id, 'segmented_at': datetime.now()}]), videos_segmented)
+        database.append_rows(pd.DataFrame(topical_segments), transcripts_segmented)
 
         count += 1
 

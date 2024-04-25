@@ -80,38 +80,34 @@ def download_video_transcript(max_downloads: int = 50):
     # Get a list of all transcribed videos
     videos_transcribed_list = set(list(videos_transcribed_df['video_id']))
 
-    # Initialise Empty video array
-    new_transcriptions = []
-    transcription_log = []
-
     count = 0
 
     for index, row in videos_cleaned_df.iterrows():
         # Check if we've collected enough transcripts for now
         if count >= max_downloads:
-            print(f"Finished collecting {max_downloads} transcripts.")
+            logger.info(f"Finished collecting {max_downloads} transcripts.")
             break
 
         # Check if the video type has already been transcribed
         if row['video_id'] in videos_transcribed_list:
             continue
 
-        print(f"Extracting transcript for {row['video_id']}")
+        logger.info(f"Extracting transcript for {row['video_id']}")
         transcription = download_transcript_from_video_id(row['video_id'], logger)
 
         if transcription is not None:
-            new_transcriptions.append(transcription)
-            transcription_log.append({'video_id': row['video_id'], 'transcribed_at': datetime.now()})
-            count += 1
+            logger.info("Publishing tracking to database")
+            try:
+                database.append_rows(pd.DataFrame(transcription), videos_transcribed)
+            except Exception as e:
+                logger.error(f"Failed to append rows to transcription log, {e}")
+            try:
+                database.append_rows(pd.DataFrame([{'video_id': row['video_id'], 'transcribed_at': datetime.now()}]), transcripts_raw)
+            except Exception as e:
+                logger.error(f"Failed to append rows to transcription log, {e}")
 
-    # Update Database
-    if new_transcriptions:
-        # Concatenate all DataFrame objects in the list
-        all_transcriptions_df = pd.concat(new_transcriptions, ignore_index=True)
-        database.append_rows(all_transcriptions_df, transcripts_raw)
-        database.append_rows(pd.DataFrame(transcription_log), videos_transcribed)
-    else:
-        print("No new transcriptions to update.")
+            count += 1
+    logger.info("Finished Upload")
 
 
 if __name__ == "__main__":
