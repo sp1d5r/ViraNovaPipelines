@@ -1,4 +1,6 @@
 from prefect import serve
+from datetime import timedelta, datetime
+from prefect.client.schemas.schedules import IntervalSchedule
 
 # Pipelines
 from pipeline.track_channels import track_channel
@@ -31,6 +33,11 @@ if __name__ == "__main__":
     extract_channel_videos_deployment = extract_channel_videos.to_deployment(
         name="Extract Videos for Channel [Channels]",
         tags=["Ingestion", "Channels", "Videos"],
+        schedule=IntervalSchedule(
+            interval=timedelta(hours=6),
+            anchor_date=datetime(2023, 1, 1, 0, 0),
+            timezone="America/Chicago"
+        )
     )
 
     # Extract a single video ID's video information
@@ -55,6 +62,11 @@ if __name__ == "__main__":
     download_transcript_deployment = download_video_transcript.to_deployment(
         name="Download Video Transcripts [Transcripts]",
         tags=["Ingestion", "Videos", "Transcripts"],
+        schedule=IntervalSchedule(
+            interval=timedelta(hours=1),
+            anchor_date=datetime(2023, 1, 1, 0, 0),
+            timezone="America/Chicago"
+        )
     )
 
     # Extract video type
@@ -67,18 +79,33 @@ if __name__ == "__main__":
     perform_topical_segmentation_deployment = perform_topical_segmentation.to_deployment(
         name="Perform Topical Segmentation [Transcripts]",
         tags=["Analysis", "Transcripts"],
+        schedule=IntervalSchedule(
+            interval=timedelta(hours=1),
+            anchor_date=datetime(2023, 1, 1, 0, 30),
+            timezone="America/Chicago"
+        )
     )
 
     # Embedding Transcripts
     get_transcript_embeddings_deployment = get_transcript_embeddings.to_deployment(
         name="Embed Transcripts [Embeddings]",
         tags=["Analysis", "Embeddings"],
+        schedule=IntervalSchedule(
+            interval=timedelta(hours=2),
+            anchor_date=datetime(2023, 1, 1, 1, 0),
+            timezone="America/Chicago"
+        )
     )
 
     # Embedding Segments
     get_segment_embeddings_deployment = get_segment_embeddings.to_deployment(
         name="Embed Segments [Embeddings]",
         tags=["Analysis", "Embeddings"],
+        schedule=IntervalSchedule(
+            interval=timedelta(hours=2),
+            anchor_date=datetime(2023, 1, 1, 0, 0),
+            timezone="America/Chicago"
+        )
     )
 
     serve(
