@@ -13,3 +13,7 @@ videos_segmented = "videos_segmented"
 # Transcript
 transcripts_raw = "transcripts_raw"
 transcripts_segmented = "transcripts_segmented"
+
+# Embeddings
+embeddings_segment = "embeddings_segment"
+embeddings_transcript = "embeddings_transcript"
