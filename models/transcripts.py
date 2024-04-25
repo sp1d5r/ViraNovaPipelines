@@ -1,6 +1,6 @@
 from database.production_db.database import Base
-from sqlalchemy import Column, String, Integer
-from table_names import transcripts_raw
+from sqlalchemy import Column, String, Integer, Float
+from table_names import transcripts_raw, transcripts_segmented
 
 
 class TranscriptRaw(Base):
@@ -13,3 +13,17 @@ class TranscriptRaw(Base):
     key = Column(String)
     video_id = Column(String)
     language = Column(String)
+
+
+class TranscriptSegmented(Base):
+    __tablename__ = transcripts_segmented
+
+    segment_id = Column(String, primary_key=True)
+    earliest_start_time = Column(Integer)
+    latest_end_time = Column(Float)
+    start_index = Column(Integer)
+    end_index = Column(Integer)
+    video_id = Column(String)
+    index = Column(Integer)
+    words = Column(String)
+    transcript = Column(String)

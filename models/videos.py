@@ -1,5 +1,5 @@
 from database.production_db.database import Base
-from sqlalchemy import Column, Integer, String, TIMESTAMP, Boolean, Float
+from sqlalchemy import Column, Integer, BIGINT, String, TIMESTAMP, Boolean, Float
 from table_names import (
     videos_raw,
     videos_cleaned,
@@ -43,11 +43,11 @@ class VideosCleaned(Base):
     width = Column(Integer)
     height = Column(Integer)
     aspect_ratio = Column(Integer)
-    view_count = Column(Integer)
-    like_count = Column(Integer)
-    favorite_count = Column(Integer)
-    comment_count = Column(Integer)
-    duration = Column(Integer)
+    view_count = Column(BIGINT)
+    like_count = Column(BIGINT)
+    favorite_count = Column(BIGINT)
+    comment_count = Column(BIGINT)
+    duration = Column(BIGINT)
     projection = Column(String)
     date_added = Column(TIMESTAMP)
 
@@ -78,14 +78,8 @@ class VideosTranscribed(Base):
     transcribed_at = Column(TIMESTAMP)
 
 
-class VideosSegmented:
+class VideosSegmented(Base):
     __tablename__ = videos_segmented
 
-    segment_id = Column(String, primary_key=True)
-    earliest_start_time = Column(Integer)
-    latest_end_time = Column(Float)
-    start_index = Column(Integer)
-    end_index = Column(Integer)
-    video_id = Column(String)
-    index = Column(Integer)
-    words = Column(String)
+    video_id = Column(String, primary_key=True)
+    segmented_at = Column(TIMESTAMP)

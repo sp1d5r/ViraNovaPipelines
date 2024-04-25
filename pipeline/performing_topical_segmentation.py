@@ -1,9 +1,12 @@
+from datetime import datetime
 import numpy as np
 import ast
 import json
+import pandas as pd
+from prefect import flow, get_run_logger
 from services.open_ai import OpenAIService
 from database.production_database import ProductionDatabase
-from table_names import transcripts_raw, videos_transcribed, videos_segmented, videos_type
+from table_names import transcripts_raw, transcripts_segmented, videos_transcribed, videos_segmented, videos_cleaned
 
 # Variables to stay within context limit open AI one request
 TOTAL_AVAILABLE_TOKENS = 8000  # Lower Bound
@@ -173,7 +176,7 @@ def create_segments(fixed_length_transcripts, boundaries, video_id, update_progr
                     'index': len(segments),
                     'transcript': " ".join(current_segment_transcripts),
                     'words': compiled_words_json,
-                    'segment_id': video_id + str(len(segments))
+                    'segment_id': video_id + '_' + str(len(segments))
                 }
                 segments.append(segment)
                 current_segment_transcripts = []
@@ -204,18 +207,19 @@ def create_segments(fixed_length_transcripts, boundaries, video_id, update_progr
             'index': len(segments),
             'transcript': " ".join(current_segment_transcripts),
             'words': compiled_words_json,
-            'segment_id': video_id + str(len(segments))
+            'segment_id': video_id + '_' + str(len(segments))
         }
         segments.append(segment)
 
     return segments
 
-
+@flow
 def perform_topical_segmentation(number_of_videos_to_segment: int = 1):
     database = ProductionDatabase()
     open_ai_service = OpenAIService()
-    update_progress = lambda x: print('Progress :', x)
-    progress_message = lambda x: print("Progress Message: ", x)
+    logger = get_run_logger()
+    update_progress = lambda x: logger.info('Progress :', x)
+    progress_message = lambda x: logger.info("Progress Message: ", x)
 
     if not database.table_exists(transcripts_raw):
         raise Exception("Transcripts Raw Table Does Not Exist.")
@@ -223,29 +227,38 @@ def perform_topical_segmentation(number_of_videos_to_segment: int = 1):
     if not database.table_exists(videos_transcribed):
         raise Exception("Videos Transcribed Table Does Not Exist.")
 
-    # if not database.table_exists(videos_segmented):
-    #     raise Exception("Videos Segmented Tracker Table Does Not Exist.")
+    if not database.table_exists(videos_segmented):
+        raise Exception("Videos Segmented Tracker Table Does Not Exist.")
+
+    if not database.table_exists(transcripts_segmented):
+        raise Exception("Transcripts Segmented Tracker Table Does Not Exist.")
 
     # Load in tables to memory
     videos_transcribed_df = database.read_table(videos_transcribed)
-    # videos_segmented_df = database.read_table(videos_segmented)
-    videos_type_df = database.read_table(videos_type)
+    videos_cleaned_df = database.read_table(videos_cleaned)
+    videos_segmented_df = database.read_table(videos_segmented)
 
     # Videos downloaded
-    all_videos_segmented = set() #set(videos_segmented_df['video_id'])
-    original_videos = set(videos_type_df['video_id'])
+    all_videos_segmented = set(videos_segmented_df['video_id'])
+    original_videos = set(videos_cleaned_df[videos_cleaned_df['duration'] > 5 * 60 * 1000]['video_id'])
 
     # Eligible original videos to segment
     eligible_videos_df = videos_transcribed_df[~videos_transcribed_df['video_id'].isin(all_videos_segmented)]
     eligible_videos_df = eligible_videos_df[eligible_videos_df['video_id'].isin(original_videos)]
-    eligible_videos_df = eligible_videos_df[eligible_videos_df['duration'] > 600]  # Ensure it's an original
 
     number_to_segment = min(number_of_videos_to_segment, len(eligible_videos_df))
     selected_videos_df = eligible_videos_df.head(number_to_segment)
 
+    # Tracking the count
+    count = 0
+
     for index, video_row in selected_videos_df.iterrows():
         video_id = video_row['video_id']
-        print(f"Performing topical segmentation for video {video_id}")
+        logger.info(f"Performing topical segmentation for video {video_id}")
+
+        if count >= number_of_videos_to_segment:
+            logger.info(f"Completed topical segmentation for {number_of_videos_to_segment} videos.")
+            break
 
         transcripts_extracted = database.query_table_by_column(transcripts_raw, 'video_id', video_id)
         fixed_length_transcripts = create_fixed_length_transcripts(transcripts_extracted, n=FIXED_SEGMENT_LENGTH)
@@ -258,9 +271,14 @@ def perform_topical_segmentation(number_of_videos_to_segment: int = 1):
         topical_segments = create_segments(fixed_length_transcripts, transcript_boundaries, video_id,
                                             update_progress, progress_message)
 
-        print(topical_segments)
-        break
+        database.append_rows(pd.DataFrame(topical_segments), transcripts_segmented)
+        database.append_rows(pd.DataFrame([{'video_id': video_id, 'segmented_at': datetime.now()}]), videos_segmented)
+
+        count += 1
 
 
 if __name__=="__main__":
-    perform_topical_segmentation()
+    perform_topical_segmentation.serve(
+        name="Perform Topical Segmentation [Transcripts]",
+        tags=["Analysis", "Transcripts"],
+    )

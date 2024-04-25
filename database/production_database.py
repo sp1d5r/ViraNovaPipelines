@@ -112,7 +112,7 @@ class ProductionDatabase(DatabaseInterface):
         """
         try:
             query = text(f"SELECT * FROM {table_name} WHERE {column_name} = :column_value")
-            result = self.engine.execute(query, {'column_value': column_value})
+            result = self.session.execute(query, {'column_value': column_value})
             transcripts = pd.DataFrame(result.fetchall(), columns=result.keys())
             return transcripts
         except SQLAlchemyError as e:

@@ -1,13 +1,14 @@
 from prefect import serve
 
-from pipeline import determine_video_type
-# Channel Parsing
+# Pipelines
 from pipeline.track_channels import track_channel
 from pipeline.clean_videos import clean_raw_videos
 from pipeline.download_videos import download_videos
+from pipeline.determine_video_type import determine_video_type
 from pipeline.extract_channel_videos import extract_channel_videos
 from pipeline.extract_transcript import download_video_transcript
 from pipeline.add_new_raw_video import add_new_raw_video
+from pipeline.performing_topical_segmentation import perform_topical_segmentation
 
 """
     PREFECT ENTRY POINT
@@ -60,6 +61,12 @@ if __name__ == "__main__":
         tags=["Analysis", "Videos"],
     )
 
+    # Perform Topical Segmentation
+    perform_topical_segmentation_deployment = perform_topical_segmentation.to_deployment(
+        name="Perform Topical Segmentation [Transcripts]",
+        tags=["Analysis", "Transcripts"],
+    )
+
     serve(
         track_channel_deployment,
         extract_channel_videos_deployment,
@@ -68,5 +75,5 @@ if __name__ == "__main__":
         download_videos_deployment,
         download_transcript_deployment,
         determine_video_type_deployment,
-
+        perform_topical_segmentation_deployment
     )
