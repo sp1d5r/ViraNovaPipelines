@@ -98,11 +98,11 @@ def download_video_transcript(max_downloads: int = 50):
         if transcription is not None:
             logger.info("Publishing tracking to database")
             try:
-                database.append_rows(pd.DataFrame(transcription), videos_transcribed)
+                database.append_rows(pd.DataFrame(transcription), transcripts_raw)
             except Exception as e:
                 logger.error(f"Failed to append rows to transcription log, {e}")
             try:
-                database.append_rows(pd.DataFrame([{'video_id': row['video_id'], 'transcribed_at': datetime.now()}]), transcripts_raw)
+                database.append_rows(pd.DataFrame([{'video_id': row['video_id'], 'transcribed_at': datetime.now()}]), videos_transcribed)
             except Exception as e:
                 logger.error(f"Failed to append rows to transcription log, {e}")
 
