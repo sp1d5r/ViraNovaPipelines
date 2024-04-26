@@ -29,6 +29,8 @@ google-auth==2.29.0
 graphviz==0.20.3
 greenlet==3.0.3
 griffe==0.43.0
+grpcio==1.62.2
+grpcio-tools==1.62.2
 h11==0.14.0
 h2==4.1.0
 hpack==4.0.0
@@ -61,7 +63,9 @@ packaging==24.0
 pandas==2.2.1
 pathspec==0.12.1
 pendulum==2.1.2
+portalocker==2.8.2
 prefect==2.18.0
+protobuf==4.25.3
 psycopg2-binary==2.9.9
 pyasn1==0.6.0
 pyasn1_modules==0.4.0
@@ -79,6 +83,7 @@ pytube==15.0.0
 pytz==2024.1
 pytzdata==2020.1
 PyYAML==6.0.1
+qdrant-client==1.9.0
 readchar==4.0.6
 referencing==0.34.0
 regex==2024.4.16
