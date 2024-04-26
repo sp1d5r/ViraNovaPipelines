@@ -215,7 +215,7 @@ def create_segments(fixed_length_transcripts, boundaries, video_id, update_progr
     return segments
 
 @flow
-def perform_topical_segmentation(number_of_videos_to_segment: int = 15):
+def perform_topical_segmentation(number_of_videos_to_segment: int = 50):
     database = ProductionDatabase()
     open_ai_service = OpenAIService()
     logger = get_run_logger()
@@ -275,8 +275,6 @@ def perform_topical_segmentation(number_of_videos_to_segment: int = 15):
 
         database.append_rows(pd.DataFrame([{'video_id': video_id, 'segmented_at': datetime.now()}]), videos_segmented)
         database.append_rows(pd.DataFrame(topical_segments), transcripts_segmented)
-
-        time.sleep(30)
 
         count += 1
 

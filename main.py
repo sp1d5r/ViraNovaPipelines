@@ -64,7 +64,7 @@ if __name__ == "__main__":
         name="Download Video Transcripts [Transcripts]",
         tags=["Ingestion", "Videos", "Transcripts"],
         schedule=IntervalSchedule(
-            interval=timedelta(hours=50),
+            interval=timedelta(hours=5),
             anchor_date=datetime(2023, 1, 1, 0, 0),
             timezone="America/Chicago"
         )
@@ -81,7 +81,7 @@ if __name__ == "__main__":
         name="Perform Topical Segmentation [Transcripts]",
         tags=["Analysis", "Transcripts"],
         schedule=IntervalSchedule(
-            interval=timedelta(hours=1),
+            interval=timedelta(hours=30),
             anchor_date=datetime(2023, 1, 1, 0, 30),
             timezone="America/Chicago"
         )
