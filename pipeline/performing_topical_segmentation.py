@@ -218,8 +218,8 @@ def perform_topical_segmentation(number_of_videos_to_segment: int = 1):
     database = ProductionDatabase()
     open_ai_service = OpenAIService()
     logger = get_run_logger()
-    update_progress = lambda x: logger.info('Progress :', x)
-    progress_message = lambda x: logger.info("Progress Message: ", x)
+    update_progress = lambda x: logger.info('Progress : ' + x)
+    progress_message = lambda x: logger.info("Progress Message: " + x)
 
     if not database.table_exists(transcripts_raw):
         raise Exception("Transcripts Raw Table Does Not Exist.")
