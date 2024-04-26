@@ -1,4 +1,5 @@
 from datetime import datetime
+import time
 import numpy as np
 import ast
 import json
@@ -214,12 +215,12 @@ def create_segments(fixed_length_transcripts, boundaries, video_id, update_progr
     return segments
 
 @flow
-def perform_topical_segmentation(number_of_videos_to_segment: int = 1):
+def perform_topical_segmentation(number_of_videos_to_segment: int = 15):
     database = ProductionDatabase()
     open_ai_service = OpenAIService()
     logger = get_run_logger()
-    update_progress = lambda x: logger.info('Progress : ' + x)
-    progress_message = lambda x: logger.info("Progress Message: " + x)
+    update_progress = lambda x: print('Progress : ' + str(x))
+    progress_message = lambda x: print("Progress Message: " + str(x))
 
     if not database.table_exists(transcripts_raw):
         raise Exception("Transcripts Raw Table Does Not Exist.")
@@ -240,14 +241,15 @@ def perform_topical_segmentation(number_of_videos_to_segment: int = 1):
 
     # Videos downloaded
     all_videos_segmented = set(videos_segmented_df['video_id'])
-    original_videos = set(videos_cleaned_df[videos_cleaned_df['duration'] > 5 * 60 * 1000]['video_id'])
+    original_videos = set(videos_cleaned_df[videos_cleaned_df['duration'] > 60 * 1000]['video_id'])
 
+    print(len(original_videos))
     # Eligible original videos to segment
     eligible_videos_df = videos_transcribed_df[~videos_transcribed_df['video_id'].isin(all_videos_segmented)]
     eligible_videos_df = eligible_videos_df[eligible_videos_df['video_id'].isin(original_videos)]
 
-    number_to_segment = min(number_of_videos_to_segment, len(eligible_videos_df))
-    selected_videos_df = eligible_videos_df.head(number_to_segment)
+    # number_to_segment = min(number_of_videos_to_segment, len(eligible_videos_df))
+    selected_videos_df = eligible_videos_df
 
     # Tracking the count
     count = 0
@@ -273,6 +275,8 @@ def perform_topical_segmentation(number_of_videos_to_segment: int = 1):
 
         database.append_rows(pd.DataFrame([{'video_id': video_id, 'segmented_at': datetime.now()}]), videos_segmented)
         database.append_rows(pd.DataFrame(topical_segments), transcripts_segmented)
+
+        time.sleep(30)
 
         count += 1
 
