@@ -13,6 +13,7 @@ from pipeline.add_new_raw_video import add_new_raw_video
 from pipeline.performing_topical_segmentation import perform_topical_segmentation
 from pipeline.get_transcript_embeddings import get_transcript_embeddings
 from pipeline.get_segment_embeddings import get_segment_embeddings
+from pipeline.store_to_vector_db import store_shorts_to_vector_db, store_segments_to_vector_db
 
 """
     PREFECT ENTRY POINT
@@ -63,7 +64,7 @@ if __name__ == "__main__":
         name="Download Video Transcripts [Transcripts]",
         tags=["Ingestion", "Videos", "Transcripts"],
         schedule=IntervalSchedule(
-            interval=timedelta(hours=1),
+            interval=timedelta(hours=50),
             anchor_date=datetime(2023, 1, 1, 0, 0),
             timezone="America/Chicago"
         )
@@ -91,7 +92,7 @@ if __name__ == "__main__":
         name="Embed Transcripts [Embeddings]",
         tags=["Analysis", "Embeddings"],
         schedule=IntervalSchedule(
-            interval=timedelta(hours=2),
+            interval=timedelta(minutes=10),
             anchor_date=datetime(2023, 1, 1, 1, 0),
             timezone="America/Chicago"
         )
@@ -102,10 +103,21 @@ if __name__ == "__main__":
         name="Embed Segments [Embeddings]",
         tags=["Analysis", "Embeddings"],
         schedule=IntervalSchedule(
-            interval=timedelta(hours=2),
+            interval=timedelta(minutes=10),
             anchor_date=datetime(2023, 1, 1, 0, 0),
             timezone="America/Chicago"
         )
+    )
+
+    store_segments_to_vector_db_deployment = store_segments_to_vector_db.to_deployment(
+        name="Store Segments to Vector DB [VectorDB]",
+        tags=["Upload", "Embeddings"],
+    )
+
+    # Storing Segments
+    store_shorts_to_vector_db_deployment = store_shorts_to_vector_db.to_deployment(
+        name="Store Shorts to Vector DB [VectorDB]",
+        tags=["Upload", "Embeddings"],
     )
 
     serve(
@@ -118,5 +130,7 @@ if __name__ == "__main__":
         determine_video_type_deployment,
         perform_topical_segmentation_deployment,
         get_transcript_embeddings_deployment,
-        get_segment_embeddings_deployment
+        get_segment_embeddings_deployment,
+        store_segments_to_vector_db_deployment,
+        store_shorts_to_vector_db_deployment
     )

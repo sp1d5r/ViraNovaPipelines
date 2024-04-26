@@ -7,7 +7,8 @@ from table_names import (
     videos_type,
     videos_transcribed,
     videos_segmented,
-    videos_embedded
+    videos_embedded,
+    videos_vectors_stored,
 )
 
 
@@ -90,3 +91,10 @@ class VideosEmbedded(Base):
 
     video_id = Column(String, primary_key=True)
     embedded_at = Column(TIMESTAMP)
+
+
+class VideosVectorStored(Base):
+    __tablename__ = videos_vectors_stored
+
+    video_id = Column(String, primary_key=True)
+    uploaded_at = Column(TIMESTAMP)

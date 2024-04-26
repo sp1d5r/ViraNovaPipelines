@@ -1,6 +1,11 @@
 from database.production_db.database import Base
 from sqlalchemy import Column, String, Integer, Float, TIMESTAMP
-from table_names import transcripts_raw, transcripts_segmented, transcripts_segment_embedded
+from table_names import (
+    transcripts_raw,
+    transcripts_segmented,
+    transcripts_segment_embedded,
+    transcripts_segment_vectors_stored
+)
 
 
 class TranscriptRaw(Base):
@@ -28,6 +33,7 @@ class TranscriptSegmented(Base):
     words = Column(String)
     transcript = Column(String)
 
+
 class TranscriptSegmentsEmbedded(Base):
     __tablename__ = transcripts_segment_embedded
 
@@ -35,3 +41,12 @@ class TranscriptSegmentsEmbedded(Base):
 
     video_id = Column(String)
     embedded_at = Column(TIMESTAMP)
+
+
+class TranscriptSegmentVectorsStored(Base):
+    __tablename__ = transcripts_segment_vectors_stored
+
+    segment_id = Column(String, primary_key=True)
+    video_id = Column(String)
+    uploaded_at = Column(TIMESTAMP)
+
