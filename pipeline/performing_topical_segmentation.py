@@ -17,16 +17,20 @@ FIXED_SEGMENT_LENGTH = 30
 AVERAGE_CHAR_SEGMENT = FIXED_SEGMENT_LENGTH * AVERAGE_ENGLISH_WORD_LENGTH
 SEGMENTS_TO_SEND_IN_PARALLEL = int((TOTAL_AVAILABLE_TOKENS * TOKEN_SIZE) / AVERAGE_CHAR_SEGMENT)
 
+import ast
+import json
+import pandas as pd
+
 
 def create_fixed_length_transcripts(transcripts, n=100):
     fixed_length_transcripts = []
 
     # Ensure transcripts are sorted by a key
     transcripts = transcripts.sort_values(by='key')
+
     for _, transcript in transcripts.iterrows():
         tStartMs = transcript['time_start_ms']
-        window_words = []
-        segment_index = 0
+        all_words = []
 
         # Try to evaluate the segments from string format
         try:
@@ -35,27 +39,31 @@ def create_fixed_length_transcripts(transcripts, n=100):
             print(f"Error parsing segs for video_id {transcript['video_id']}: {e}")
             continue
 
+        # Collect all words and their start times in a list
         for seg in segs:
             word = seg['utf8'].strip()
-            if word == '':
-                continue
-            offset_ms = seg.get('tOffsetMs', 0)  # Default to 0 if tOffsetMs is not available
-            start_time = tStartMs + offset_ms
+            if word:
+                offset_ms = seg.get('tOffsetMs', 0)  # Default to 0 if tOffsetMs is not available
+                start_time = tStartMs + offset_ms
 
-            # Create a dictionary for each word with word and start time
-            word_info = {
-                'word': word,
-                'start_time': start_time
-            }
+                all_words.append({
+                    'word': word,
+                    'start_time': start_time
+                })
 
-            window_words.append(word_info)
-            segment_index += 1
-
-            # Check if the window is full or if it's the last word in the segment
-            if len(window_words) == n or segment_index == len(segs):
+        # Break down the list of all words into fixed-length segments
+        for i in range(0, len(all_words), n):
+            window_words = all_words[i:i + n]
+            if window_words:
                 first_word_time = window_words[0]['start_time']
+
                 # Estimate end time from the last word in the window by adding average word duration
-                end_time = window_words[-1]['start_time'] + (tStartMs / len(segs))
+                if len(window_words) == n:
+                    end_time = window_words[-1]['start_time'] + (
+                                (window_words[-1]['start_time'] - window_words[0]['start_time']) / len(window_words))
+                else:
+                    # If the last segment is shorter than n, we can't do the above estimation
+                    end_time = window_words[-1]['start_time'] + (tStartMs / len(segs))
 
                 # Compile the window words into a transcript text
                 transcript_text = " ".join([w['word'] for w in window_words])
@@ -71,10 +79,8 @@ def create_fixed_length_transcripts(transcripts, n=100):
                     'words': words_json  # Store word-level information as JSON string
                 })
 
-                # Reset the window for the next segment
-                window_words = []
-
     return fixed_length_transcripts
+
 
 def extract_boundaries(angular_distances, threshold):
     # Convert angular distances to a binary segmentation based on the threshold
