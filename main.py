@@ -112,12 +112,22 @@ if __name__ == "__main__":
     store_segments_to_vector_db_deployment = store_segments_to_vector_db.to_deployment(
         name="Store Segments to Vector DB [VectorDB]",
         tags=["Upload", "Embeddings"],
+        schedule=IntervalSchedule(
+            interval=timedelta(hours=4),
+            anchor_date=datetime(2023, 1, 1, 0, 17),
+            timezone="America/Chicago"
+        )
     )
 
     # Storing Segments
     store_shorts_to_vector_db_deployment = store_shorts_to_vector_db.to_deployment(
         name="Store Shorts to Vector DB [VectorDB]",
         tags=["Upload", "Embeddings"],
+        schedule=IntervalSchedule(
+            interval=timedelta(hours=4),
+            anchor_date=datetime(2023, 1, 1, 0, 25),
+            timezone="America/Chicago"
+        )
     )
 
     serve(
