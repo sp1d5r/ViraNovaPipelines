@@ -13,7 +13,7 @@ from table_names import transcripts_raw, transcripts_segmented, videos_transcrib
 TOTAL_AVAILABLE_TOKENS = 8000  # Lower Bound
 TOKEN_SIZE = 3
 AVERAGE_ENGLISH_WORD_LENGTH = 8
-FIXED_SEGMENT_LENGTH = 30
+FIXED_SEGMENT_LENGTH = 43
 AVERAGE_CHAR_SEGMENT = FIXED_SEGMENT_LENGTH * AVERAGE_ENGLISH_WORD_LENGTH
 SEGMENTS_TO_SEND_IN_PARALLEL = int((TOTAL_AVAILABLE_TOKENS * TOKEN_SIZE) / AVERAGE_CHAR_SEGMENT)
 
@@ -114,7 +114,7 @@ def angular_distance(similarity):
 def calculate_boundaries_for_segments(subset_embeddings, update_progress):
     # Optimal Values for this video where:
     # Threshold = mean + 1.05 * std
-    std = 1.05
+    std = 0.7
 
     # Compute angular distance between consecutive embeddings
     angular_distances = []
