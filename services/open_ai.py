@@ -94,7 +94,7 @@ class OpenAIService():
                 for embedding_info in embedding_json['data']:
                     embeddings_recorded.append(embedding_info['embedding'])
 
-                time.sleep(15)
+                time.sleep(1)
 
             except Exception as e:
                 print(f"An unexpected error occurred: {str(e)}")
