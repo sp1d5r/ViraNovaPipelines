@@ -10,7 +10,7 @@ from table_names import transcripts_segment_embedded, transcripts_segmented, vid
 
 
 @flow
-def get_segment_embeddings(videos_to_embedd: int = 1):
+def get_segment_embeddings(videos_to_embedd: int = 50):
     database = ProductionDatabase()
     open_ai_service = OpenAIService()
 
