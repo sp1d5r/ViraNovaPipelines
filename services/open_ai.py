@@ -60,7 +60,7 @@ class OpenAIService():
 
                 # Store the embeddings
                 embeddings_recorded.extend([text_embedding] * step)
-                time.sleep(3)
+                time.sleep(1)
 
             except Exception as e:
                 print(f"An unexpected error occurred: {str(e)}")

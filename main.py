@@ -51,6 +51,11 @@ if __name__ == "__main__":
     clean_raw_videos_deployment = clean_raw_videos.to_deployment(
         name="Clean Videos [Videos]",
         tags=["Data Cleaning", "Videos"],
+        schedule=IntervalSchedule(
+            interval=timedelta(hours=12),
+            anchor_date=datetime(2023, 1, 1, 0, 0),
+            timezone="America/Chicago"
+        )
     )
 
     # Download videos to download location
@@ -64,7 +69,7 @@ if __name__ == "__main__":
         name="Download Video Transcripts [Transcripts]",
         tags=["Ingestion", "Videos", "Transcripts"],
         schedule=IntervalSchedule(
-            interval=timedelta(minutes=10),
+            interval=timedelta(hours=1),
             anchor_date=datetime(2023, 1, 1, 0, 0),
             timezone="America/Chicago"
         )
@@ -81,7 +86,7 @@ if __name__ == "__main__":
         name="Perform Topical Segmentation [Transcripts]",
         tags=["Analysis", "Transcripts"],
         schedule=IntervalSchedule(
-            interval=timedelta(minutes=10),
+            interval=timedelta(minutes=30),
             anchor_date=datetime(2023, 1, 1, 0, 30),
             timezone="America/Chicago"
         )
@@ -92,7 +97,7 @@ if __name__ == "__main__":
         name="Embed Transcripts [Embeddings]",
         tags=["Analysis", "Embeddings"],
         schedule=IntervalSchedule(
-            interval=timedelta(minutes=10),
+            interval=timedelta(minutes=30),
             anchor_date=datetime(2023, 1, 1, 1, 0),
             timezone="America/Chicago"
         )
@@ -103,7 +108,7 @@ if __name__ == "__main__":
         name="Embed Segments [Embeddings]",
         tags=["Analysis", "Embeddings"],
         schedule=IntervalSchedule(
-            interval=timedelta(minutes=10),
+            interval=timedelta(minutes=30),
             anchor_date=datetime(2023, 1, 1, 0, 0),
             timezone="America/Chicago"
         )

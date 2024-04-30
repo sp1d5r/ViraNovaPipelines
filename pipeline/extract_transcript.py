@@ -106,7 +106,7 @@ def download_video_transcript(max_downloads: int = 50):
             except Exception as e:
                 logger.error(f"Failed to append rows to transcription log, {e}")
 
-            count += 1
+    count += 1
     logger.info("Finished Upload")
 
 

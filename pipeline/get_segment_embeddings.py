@@ -1,6 +1,6 @@
 import time
 from datetime import datetime
-from prefect import flow
+from prefect import flow, get_run_logger
 import pandas as pd
 from database.production_database import ProductionDatabase
 from services.open_ai import OpenAIService
@@ -13,6 +13,7 @@ from table_names import transcripts_segment_embedded, transcripts_segmented, vid
 def get_segment_embeddings(videos_to_embedd: int = 50):
     database = ProductionDatabase()
     open_ai_service = OpenAIService()
+    logger = get_run_logger()
 
     if not database.table_exists(transcripts_segment_embedded):
         raise Exception("Transcript Segment Embeddings Table Does Not Exist.")
@@ -39,15 +40,15 @@ def get_segment_embeddings(videos_to_embedd: int = 50):
         video_id = video_row['video_id']
 
         if count >= videos_to_embedd:
-            print(f"Completed video embedding stage for {videos_to_embedd} videos.")
+            logger.info(f"Completed video embedding stage for {videos_to_embedd} videos.")
             break
 
-        print(f"Extracting segments for video: {video_id}")
+        logger.info(f"Extracting segments for video: {video_id}")
         segments = database.query_table_by_column(transcripts_segmented, 'video_id', video_id)
 
         for seg_index, segment_row in segments.iterrows():
             segment_id = segment_row['segment_id']
-            print(f"Calculating embedding for segment: {segment_id}")
+            logger.info(f"Calculating embedding for segment: {segment_id}")
             transcript_to_embed = segment_row['transcript']
             embedding = open_ai_service.get_single_embedding(transcript_to_embed)
 
@@ -61,7 +62,7 @@ def get_segment_embeddings(videos_to_embedd: int = 50):
                     'embedding': serialized_embedding
                 }]), embeddings_segment)
             except Exception as e:
-                print(f"Failed to upload embedded segment: {segment_id}, {e}")
+                logger.info(f"Failed to upload embedded segment: {segment_id}, {e}")
             try:
                 database.append_rows(
                     pd.DataFrame(
@@ -74,9 +75,9 @@ def get_segment_embeddings(videos_to_embedd: int = 50):
                     transcripts_segment_embedded
                 )
             except Exception as e:
-                print(f"Failed to update segment embedding tracker: {segment_id}, {e}")
+                logger.info(f"Failed to update segment embedding tracker: {segment_id}, {e}")
 
-            time.sleep(15)
+            time.sleep(1)
 
         count += 1
 
