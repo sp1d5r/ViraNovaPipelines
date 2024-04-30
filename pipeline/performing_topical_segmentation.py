@@ -26,12 +26,12 @@ def create_fixed_length_transcripts(transcripts, n=100):
     fixed_length_transcripts = []
 
     # Ensure transcripts are sorted by a key
-    transcripts = transcripts.sort_values(by='key')
+    transcripts = transcripts.sort_values(by='time_start_ms')
+
+    all_words = []
 
     for _, transcript in transcripts.iterrows():
         tStartMs = transcript['time_start_ms']
-        all_words = []
-
         # Try to evaluate the segments from string format
         try:
             segs = ast.literal_eval(transcript['segs'])
@@ -51,33 +51,33 @@ def create_fixed_length_transcripts(transcripts, n=100):
                     'start_time': start_time
                 })
 
-        # Break down the list of all words into fixed-length segments
-        for i in range(0, len(all_words), n):
-            window_words = all_words[i:i + n]
-            if window_words:
-                first_word_time = window_words[0]['start_time']
+    # Break down the list of all words into fixed-length segments
+    for i in range(0, len(all_words), n):
+        window_words = all_words[i:i + n]
+        if window_words:
+            first_word_time = window_words[0]['start_time']
 
-                # Estimate end time from the last word in the window by adding average word duration
-                if len(window_words) == n:
-                    end_time = window_words[-1]['start_time'] + (
-                                (window_words[-1]['start_time'] - window_words[0]['start_time']) / len(window_words))
-                else:
-                    # If the last segment is shorter than n, we can't do the above estimation
-                    end_time = window_words[-1]['start_time'] + (tStartMs / len(segs))
+            # Estimate end time from the last word in the window by adding average word duration
+            if len(window_words) == n:
+                end_time = window_words[-1]['start_time'] + (
+                            (window_words[-1]['start_time'] - window_words[0]['start_time']) / len(window_words))
+            else:
+                # If the last segment is shorter than n, we can't do the above estimation
+                end_time = window_words[-1]['start_time']
 
-                # Compile the window words into a transcript text
-                transcript_text = " ".join([w['word'] for w in window_words])
+            # Compile the window words into a transcript text
+            transcript_text = " ".join([w['word'] for w in window_words])
 
-                # JSON-format the word details
-                words_json = json.dumps(window_words)
+            # JSON-format the word details
+            words_json = json.dumps(window_words)
 
-                # Append the fixed-length transcript segment to the list
-                fixed_length_transcripts.append({
-                    'start_time': first_word_time,
-                    'end_time': end_time,
-                    'transcript': transcript_text,
-                    'words': words_json  # Store word-level information as JSON string
-                })
+            # Append the fixed-length transcript segment to the list
+            fixed_length_transcripts.append({
+                'start_time': first_word_time,
+                'end_time': end_time,
+                'transcript': transcript_text,
+                'words': words_json  # Store word-level information as JSON string
+            })
 
     return fixed_length_transcripts
 
@@ -220,6 +220,7 @@ def create_segments(fixed_length_transcripts, boundaries, video_id, update_progr
 
     return segments
 
+
 @flow
 def perform_topical_segmentation(number_of_videos_to_segment: int = 50):
     database = ProductionDatabase()
@@ -249,7 +250,6 @@ def perform_topical_segmentation(number_of_videos_to_segment: int = 50):
     all_videos_segmented = set(videos_segmented_df['video_id'])
     original_videos = set(videos_cleaned_df[videos_cleaned_df['duration'] > 60 * 1000]['video_id'])
 
-    print(len(original_videos))
     # Eligible original videos to segment
     eligible_videos_df = videos_transcribed_df[~videos_transcribed_df['video_id'].isin(all_videos_segmented)]
     eligible_videos_df = eligible_videos_df[eligible_videos_df['video_id'].isin(original_videos)]
@@ -286,7 +286,4 @@ def perform_topical_segmentation(number_of_videos_to_segment: int = 50):
 
 
 if __name__=="__main__":
-    perform_topical_segmentation.serve(
-        name="Perform Topical Segmentation [Transcripts]",
-        tags=["Analysis", "Transcripts"],
-    )
+    perform_topical_segmentation()

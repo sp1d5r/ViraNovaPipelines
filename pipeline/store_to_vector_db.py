@@ -23,11 +23,18 @@ load_dotenv()
 NAMESPACE = uuid.NAMESPACE_DNS
 
 
-@flow
+class TestLog:
+    def __init__(self):
+        pass
+
+    def info(self, x):
+        print(x)
+
+# @flow
 def store_segments_to_vector_db(number_of_segments_to_upload: int = 50):
     database = ProductionDatabase()
     client = QdrantClient(url=os.getenv("QDRANT_LOCATION"))
-    logger = get_run_logger()
+    logger = TestLog() # get_run_logger()
 
     if not database.table_exists(videos_cleaned):
         raise Exception("Videos Cleaned Table Not Found")
@@ -50,7 +57,7 @@ def store_segments_to_vector_db(number_of_segments_to_upload: int = 50):
     transcripts_segment_vectors_stored_df = database.read_table(transcripts_segment_vectors_stored)
 
     # Determine eligible segments
-    segments_already_stored = set(transcripts_segment_vectors_stored_df['segment_id'])
+    segments_already_stored = set() # set(transcripts_segment_vectors_stored_df['segment_id'])
     eligible_segments_df = transcripts_segment_embedded_df[~transcripts_segment_embedded_df['segment_id'].isin(segments_already_stored)]
 
     count = 0
@@ -106,7 +113,7 @@ def store_segments_to_vector_db(number_of_segments_to_upload: int = 50):
         logger.info(f"QDrant Operation Info Status: {operation_info.status.value}")
 
         try:
-            database.append_rows(pd.DataFrame(
+            database.write_to_table(pd.DataFrame(
                 [{
                     'segment_id': segment_id,
                     'video_id': video_id,
@@ -213,7 +220,7 @@ def store_shorts_to_vector_db(number_of_videos_to_upload: int = 50):
 
 
 if __name__ == "__main__":
-    store_shorts_to_vector_db()
+    store_segments_to_vector_db(1)
 
 
 
