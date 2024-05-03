@@ -69,6 +69,19 @@ class DatabaseInterface(ABC):
         """
         pass
 
+    @abstractmethod
+    def delete_all_rows(self, table_name: str) -> bool:
+        """
+        Deletes all the rows within a table without dropping table schema. It's a safe delete
+
+        :param table_name: (str) The name of the table to delete
+        :return: bool: if the operation was successful.
+
+        Raises:
+        - DatabaseConnectionError: If any error occurs during the database operation.
+        """
+        pass
+
 
 class DatabaseConnectionError(Exception):
     def __init__(self, message: str):

@@ -1,6 +1,6 @@
 from database.production_db.database import Base
-from sqlalchemy import Column, String, Boolean, TIMESTAMP
-from table_names import channels_raw, channels_downloaded
+from sqlalchemy import Column, String, Boolean, TIMESTAMP, Integer, BigInteger
+from table_names import channels_raw, channels_downloaded, channels_historical_stats
 
 
 class ChannelsRaw(Base):
@@ -19,3 +19,13 @@ class ChannelsDownloaded(Base):
     channel_name = Column(String)
     downloaded = Column(Boolean)
     date_added = Column(TIMESTAMP)
+
+
+class ChannelsHistoricalStats(Base):
+    __tablename__ = channels_historical_stats
+
+    stat_id = Column(String, primary_key=True)
+    channel_id = Column(String)
+    date = Column(TIMESTAMP)
+    subs = Column(BigInteger)
+    views = Column(BigInteger)

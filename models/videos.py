@@ -9,6 +9,7 @@ from table_names import (
     videos_segmented,
     videos_embedded,
     videos_vectors_stored,
+    videos_evaluated
 )
 
 
@@ -98,3 +99,9 @@ class VideosVectorStored(Base):
 
     video_id = Column(String, primary_key=True)
     uploaded_at = Column(TIMESTAMP)
+
+class VideosEvaluated(Base):
+    __tablename__ = videos_evaluated
+
+    video_id = Column(String, primary_key=True)
+    score = Column(Integer)

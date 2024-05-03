@@ -120,3 +120,27 @@ class ProductionDatabase(DatabaseInterface):
                 f"Error occurred while querying {table_name} for {column_name} = {column_value}: {e}"
             )
 
+    def delete_all_rows(self, table_name: str) -> bool:
+        """
+        Deletes all the rows within a table without dropping table schema. It's a safe delete
+
+        :param table_name: (str) The name of the table to delete
+        :return: bool: if the operation was successful.
+
+        Raises:
+        - DatabaseConnectionError: If any error occurs during the database operation.
+        """
+        try:
+            # Start a transaction
+            self.session.begin()
+
+            # Execute delete statement to remove all rows from the table
+            self.session.execute(text(f"DELETE FROM {table_name}"))
+
+            self.session.commit()
+            return True
+        except SQLAlchemyError as e:
+            self.session.rollback()
+            raise DatabaseConnectionError(
+                f"Error occurred while deleting all rows from {table_name}: {e}"
+            )
